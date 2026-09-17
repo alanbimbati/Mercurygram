@@ -12,7 +12,10 @@ import org.nostrdevkit.sdk.RelayUrl
 import org.nostrdevkit.sdk.UnwrappedGift
 import org.nostrdevkit.sdk.nip17MakePrivateMsg
 
-private const val KIND_GIFT_WRAP = 1059uL
+// Kind's constructor takes UShort specifically -- .toUShort() (not a `u`/`uL`
+// literal suffix, which default to UInt/ULong) to avoid relying on
+// contextual unsigned-literal-type inference across Kotlin versions.
+private val KIND_GIFT_WRAP = 1059.toUShort()
 
 /** Milestone 1 spike result: one decrypted NIP-17 DM. */
 data class ReceivedDm(
@@ -112,7 +115,7 @@ object NostrSpike {
         val client = Client()
         for (url in relayUrls) client.addRelay(RelayUrl.parse(url))
         client.connect()
-        val filter = Filter().kind(Kind(0u)).author(pubkey).limit(1uL)
+        val filter = Filter().kind(Kind(0.toUShort())).author(pubkey).limit(1uL)
         var profile: NostrProfile? = null
         for (event in client.fetchEvents(ReqTarget.auto(listOf(filter)))) {
             val record = Metadata.fromJson(event.content()).asRecord()

@@ -12,6 +12,15 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Also create a GitHub Release and publish to Zapstore (off = build-only test APK)'
+        type: boolean
+        default: false
+      build_tag:
+        description: 'MG_BUILD_TAG for this test build — must be numeric X.Y.Z.M (gradle/mg-version.gradle rejects anything else, e.g. a branch name)'
+        type: string
+        default: '0.0.1.0'
 
 concurrency:
   group: mercurynostr-release-${{ github.ref }}
@@ -37,8 +46,8 @@ jobs:
           task: assembleAfatRelease
           abi: universal
           build-type: release
-          artifact-version: ${{ github.ref_name }}
-          build-tag: ${{ github.ref_name }}
+          artifact-version: ${{ inputs.build_tag || github.ref_name }}
+          build-tag: ${{ inputs.build_tag || github.ref_name }}
           app-id: ${{ secrets.APP_ID }}
           app-hash: ${{ secrets.APP_HASH }}
           release-keystore-b64: ${{ secrets.RELEASE_KEYSTORE }}
@@ -55,6 +64,7 @@ jobs:
   release:
     runs-on: ubuntu-24.04
     needs: build
+    if: github.event_name == 'push' || inputs.publish == true
     permissions:
       contents: write
 
@@ -73,6 +83,7 @@ jobs:
   publish-zapstore:
     runs-on: ubuntu-24.04
     needs: release
+    if: github.event_name == 'push' || inputs.publish == true
     permissions:
       contents: read
 

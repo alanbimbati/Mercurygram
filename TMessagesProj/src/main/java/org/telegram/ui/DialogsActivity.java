@@ -7084,6 +7084,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     @Override
     public void onResume() {
         super.onResume();
+        org.telegram.mercurynostr.NostrSpikeBridge.maybeStartSpike(this, currentAccount);
         if (dialogStoriesCell != null) {
             dialogStoriesCell.onResume();
         }

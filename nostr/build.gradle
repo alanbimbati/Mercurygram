@@ -1,0 +1,36 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+// Independent Nostr subsystem (see FEATURE_MAP.md / implementation plan):
+// deliberately has zero dependency on org.telegram.* — pure Nostr protocol
+// logic only. Glue code that touches Telegram's UI/data classes lives in
+// TMessagesProj, not here.
+
+repositories {
+    mavenCentral()
+    google()
+}
+
+android {
+    namespace 'org.telegram.mercurynostr'
+    compileSdkVersion 36
+
+    defaultConfig {
+        minSdkVersion 24
+        targetSdkVersion 36
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+dependencies {
+    implementation 'org.nostrdevkit:nostr-sdk:0.45.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0'
+}

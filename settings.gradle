@@ -1,4 +1,5 @@
 include ':TMessagesProj'
+include ':nostr'
 include ':TMessagesProj_App'
 include ':TMessagesProj_AppTests'
 include ':TMessagesProj_PluginTor'

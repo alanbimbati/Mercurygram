@@ -218,7 +218,14 @@ runs:
         else
             APK_DIR=TMessagesProj_App/build/outputs/apk/${{ inputs.flavor }}/${{ inputs.build-type }}
             DEST="$APK_DIR/Mercurygram${{ inputs.name-infix }}-${{ inputs.artifact-version }}-${{ inputs.abi }}.apk"
-            cp "$APK_DIR/${{ inputs.flavor }}.apk" "$DEST"
+            # AGP's raw output filename for a flavor+buildType isn't always
+            # "<flavor>.apk" (e.g. it isn't for a non-split "afat" release
+            # build — the only flavor/buildType combo this repo's own CI
+            # never exercised before). Glob instead of assuming the name.
+            shopt -s nullglob
+            src_apks=("$APK_DIR"/*.apk)
+            [ "${#src_apks[@]}" -eq 1 ] || { echo "expected exactly 1 apk in $APK_DIR, found ${#src_apks[@]}: ${src_apks[*]}" >&2; exit 1; }
+            cp "${src_apks[0]}" "$DEST"
         fi
         echo "APK: ${DEST}"
         echo "Size: $(du -h "$DEST" | cut -f1) ($(stat -c%s "$DEST") bytes)"

@@ -27,8 +27,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Without this, `build` recompiles all native libs (FFmpeg, BoringSSL,
+  # dav1d, libvpx) from scratch every run — ~70 minutes. This warms the
+  # same cache tests.yml/release.yml use, keyed by ABI, so `afat` (which
+  # targets the same 4 ABIs) hits it too.
+  prewarm-native:
+    uses: ./.github/workflows/_prewarm-native.yml
+    secrets:
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_HASH: ${{ secrets.APP_HASH }}
+
   build:
     runs-on: ubuntu-24.04
+    needs: prewarm-native
+    # Graceful degradation, matching release.yml: a prewarm flake just
+    # leaves the cache cold, build-mg rebuilds natives inline instead.
+    if: ${{ !cancelled() }}
     permissions:
       contents: read
 

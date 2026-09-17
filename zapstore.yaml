@@ -1,0 +1,31 @@
+# zsp config — https://github.com/zapstore/zsp
+#
+# release_source points at a fixed local filename that CI copies the
+# freshly-built APK to before invoking zsp (see .github/workflows/
+# zapstore-release.yml) — avoids depending on GitHub API asset matching for
+# something we just built ourselves in the same job.
+
+repository: https://github.com/alanbimbati/Mercurygram
+release_source: ./release.apk
+
+# TODO: placeholder branding — decide final app name/icon before the first
+# real (non-Milestone-0) publish. Must not use "Telegram" or its logo
+# (trademark constraint, see FEATURE_MAP.md and the fork's own README).
+name: MercuryNostr
+summary: "Mercurygram con supporto Nostr in arrivo (in sviluppo)"
+description: |
+  Fork di Mercurygram (client Telegram de-googlizzato) a cui si sta
+  aggiungendo uno switch verso il protocollo Nostr, mantenendo l'interfaccia
+  Telegram. Questa release è ancora la build non modificata: nessuna
+  funzionalità Nostr è presente finché non arrivano le milestone successive.
+
+tags:
+  - messaging
+  - nostr
+  - telegram
+
+license: GPL-2.0
+
+# supported_nips: elencare qui man mano che le milestone del piano
+# implementano ciascun NIP (vedi FEATURE_MAP.md) — vuoto finché questa build
+# resta un fork non modificato.

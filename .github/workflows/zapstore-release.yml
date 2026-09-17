@@ -1,0 +1,114 @@
+name: MercuryNostr Release
+
+# Our own release pipeline — separate from upstream Mercurygram's release.yml
+# (moved to .github/workflows-upstream-reference/, disabled) which pushes to
+# their F-Droid/GitLab and website infra we don't have credentials for.
+# Distribution: GitHub Releases + Zapstore only (no F-Droid, no Play Store),
+# so we build a single universal "afat" APK instead of the per-ABI/bundle
+# matrix upstream uses.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+concurrency:
+  group: mercurynostr-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          submodules: recursive
+
+      - name: Build APK
+        id: build
+        uses: ./.github/actions/build-mg
+        with:
+          flavor: afat
+          task: assembleAfatRelease
+          abi: universal
+          build-type: release
+          artifact-version: ${{ github.ref_name }}
+          build-tag: ${{ github.ref_name }}
+          app-id: ${{ secrets.APP_ID }}
+          app-hash: ${{ secrets.APP_HASH }}
+          release-keystore-b64: ${{ secrets.RELEASE_KEYSTORE }}
+          release-keystore-password: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          release-key-alias: ${{ secrets.RELEASE_KEY_ALIAS }}
+          release-key-password: ${{ secrets.RELEASE_KEY_PASSWORD }}
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: apk-universal
+          path: ${{ steps.build.outputs.apk_path }}
+
+  release:
+    runs-on: ubuntu-24.04
+    needs: build
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: apk-universal
+          path: artifacts/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
+        with:
+          files: artifacts/*.apk
+
+  publish-zapstore:
+    runs-on: ubuntu-24.04
+    needs: release
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Download APK artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: apk-universal
+          path: artifacts/
+
+      # zapstore.yaml's release_source points at this fixed name so zsp
+      # doesn't need to re-fetch the asset we just built via the GitHub API.
+      - name: Stage APK for zsp
+        run: cp artifacts/*.apk release.apk
+
+      # Pinned to an exact version + sha256 we computed ourselves (zsp
+      # doesn't publish its own checksums file) rather than "latest": a
+      # compromised or broken zsp release should not silently start
+      # publishing bad app metadata under our pubkey. Bump both the version
+      # and the hash together, deliberately, when upgrading.
+      - name: Install zsp
+        env:
+          ZSP_VERSION: 0.4.17
+          ZSP_SHA256: 3f241da6a5dc7a85fe851d3b42b77790b651bd36c7029382a701262bda832d20
+        run: |
+          set -euo pipefail
+          curl -sSfL -o zsp "https://github.com/zapstore/zsp/releases/download/v${ZSP_VERSION}/zsp-${ZSP_VERSION}-linux-amd64"
+          echo "${ZSP_SHA256}  zsp" | sha256sum -c -
+          chmod +x zsp
+          ./zsp --version
+
+      - name: Publish to Zapstore
+        env:
+          SIGN_WITH: ${{ secrets.ZAPSTORE_NSEC }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./zsp publish zapstore.yaml --quiet --skip-preview --commit "$GITHUB_SHA"

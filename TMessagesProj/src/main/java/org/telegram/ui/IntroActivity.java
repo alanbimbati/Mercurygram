@@ -392,6 +392,19 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
         bottomPages = new BottomPagesView(context, viewPager, 6);
         frameContainerView.addView(bottomPages, LayoutHelper.createFrame(66, 5, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, ICON_HEIGHT_DP + 200, 0, 0));
 
+        TextView nostrLoginTextView = new TextView(context);
+        nostrLoginTextView.setGravity(Gravity.CENTER);
+        nostrLoginTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
+        nostrLoginTextView.setText("Accedi con Nostr");
+        nostrLoginTextView.setTextColor(0xFF4E9CE8);
+        frameContainerView.addView(nostrLoginTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 24, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 50));
+        nostrLoginTextView.setOnClickListener(v -> {
+            if (startPressed) {
+                return;
+            }
+            presentFragment(new org.telegram.mercurynostr.NostrLoginActivity());
+        });
+
         switchLanguageTextView = new TextView(context);
         switchLanguageTextView.setGravity(Gravity.CENTER);
         switchLanguageTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);

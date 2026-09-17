@@ -5,6 +5,7 @@ import org.nostrdevkit.sdk.Client
 import org.nostrdevkit.sdk.Filter
 import org.nostrdevkit.sdk.Keys
 import org.nostrdevkit.sdk.Kind
+import org.nostrdevkit.sdk.Metadata
 import org.nostrdevkit.sdk.PublicKey
 import org.nostrdevkit.sdk.ReqTarget
 import org.nostrdevkit.sdk.RelayUrl
@@ -97,4 +98,40 @@ object NostrSpike {
             client.sendDirectMessage(receiverPubkeyHex, text)
         }
     }
+
+    /**
+     * Login-flow entry point: parses [nsec], fetches this pubkey's own kind-0
+     * metadata (one-shot, not a live subscription), returns null if none was
+     * found on any of [relayUrls] within the fetch window. Throws if [nsec]
+     * itself doesn't parse (caller should catch and show a login error).
+     */
+    @JvmStatic
+    fun loginAndFetchProfileBlocking(nsec: String, relayUrls: List<String>): NostrProfile? = runBlocking {
+        val keys = Keys.parse(nsec)
+        val pubkey = keys.publicKey()
+        val client = Client()
+        for (url in relayUrls) client.addRelay(RelayUrl.parse(url))
+        client.connect()
+        val filter = Filter().kind(Kind(0u)).author(pubkey).limit(1uL)
+        var profile: NostrProfile? = null
+        for (event in client.fetchEvents(ReqTarget.auto(listOf(filter)))) {
+            val record = Metadata.fromJson(event.content()).asRecord()
+            profile = NostrProfile(
+                npub = pubkey.toBech32(),
+                pubkeyHex = pubkey.toHex(),
+                name = record.displayName ?: record.name,
+                about = record.about,
+                pictureUrl = record.picture,
+            )
+        }
+        profile
+    }
 }
+
+data class NostrProfile(
+    val npub: String,
+    val pubkeyHex: String,
+    val name: String?,
+    val about: String?,
+    val pictureUrl: String?,
+)

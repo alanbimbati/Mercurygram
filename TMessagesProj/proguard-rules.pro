@@ -104,6 +104,15 @@
 -keep class ru.noties.jlatexmath.** { *; }
 -dontwarn org.scilab.forge.jlatexmath.**
 
+# nostr-sdk (org.nostrdevkit): UniFFI-generated Kotlin bindings call into
+# native Rust via JNA, which resolves native methods and struct layouts by
+# reflection -- unminified names/members required or it breaks at runtime
+# in a release build, not at compile time.
+-keep class org.nostrdevkit.** { *; }
+-keep class com.sun.jna.** { *; }
+-dontwarn com.sun.jna.**
+-keep class org.telegram.mercurynostr.** { *; }
+
 # Use -keep to explicitly keep any other classes shrinking would remove
 -dontoptimize
 -dontobfuscate

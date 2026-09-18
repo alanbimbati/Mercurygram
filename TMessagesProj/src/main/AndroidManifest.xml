@@ -240,6 +240,11 @@
         </activity-alias>
 
         <activity
+            android:name="org.telegram.mercurynostr.CrashActivity"
+            android:exported="false"
+            android:process=":crash" />
+
+        <activity
             android:name="org.telegram.ui.LaunchActivity"
             android:theme="@style/Theme.TMessages.Start"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode|smallestScreenSize|screenLayout"

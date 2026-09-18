@@ -293,6 +293,10 @@ public class ApplicationLoader extends Application {
 
     @Override
     public void onCreate() {
+        // Diagnostic-only, see NostrSpikeCrashHandler's own doc comment --
+        // installed first so it catches crashes as early as possible.
+        Thread.setDefaultUncaughtExceptionHandler(new org.telegram.mercurynostr.NostrSpikeCrashHandler(this));
+
         applicationLoaderInstance = this;
         try {
             applicationContext = getApplicationContext();
